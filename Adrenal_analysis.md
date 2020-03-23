@@ -557,3 +557,91 @@ Look at README.md again. You should now see the new line there.
 Now just … repeat. Do work somewhere. Commit it. Push it or pull it* depending on where you did it, but get local and remote “synced up”. Repeat.
 
 \* Note that in general (and especially in future when collaborating with other developers) you will usually need to pull changes from the remote (GitHub) before pushing the local changes you have made. For this reason, it’s a good idea to try and get into the habit of pulling before you attempt to push.
+
+
+
+# Part 6 Analysis
+
+
+
+## 6.1 FASTQC
+
+Run fastqc for all of the samples:
+
+```bash
+find . -name "*.fastq.gz" | parallel fastqc -o {//}/ {} # Run in same folder where files are located
+```
+
+
+
+## 6.2 STAR Index Generation
+
+STAR index generated in myriad (sequences are 43 bp long) using:
+
+```bash
+#!/bin/bash -l
+#$ -S /bin/bash
+#$ -l h_rt=02:00:00
+#$ -l mem=124G
+#$ -N star_index
+#$ -pe smp 12
+#$ -wd /home/sejjide/Scratch/genome/star_43bp
+
+module load star/2.5.2a
+
+
+STAR --runMode genomeGenerate --runThreadN 24 --genomeDir ~/Scratch/genome/star_43bp \
+--genomeFastaFiles  ~/Scratch/genome/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
+--sjdbGTFfile ~/Scratch/genome/Homo_sapiens.GRCh38.86.gtf --sjdbOverhang 42
+
+```
+
+
+
+From the STAR manual:
+
+2.2.1 Which chromosomes/scaffolds/patches to include?
+
+It is strongly recommended to include major chromosomes (e.g., for human chr1-22,chrX,chrY,chrM,) as well as un-placed and un-localized scaffolds. Typically, un-placed/un-localized scaffolds add just a few MegaBases to the genome length, however, a substantial number of reads may map to ribosomal RNA (rRNA) repeats on these scaffolds. These reads would be reported as unmapped if the scaffolds are not included in the genome, or, even worse, may be aligned to wrong loci on the chromosomes. **Generally, patches and alternative haplotypes should not be included in the genome.** Examples of acceptable genome sequence files: • ENSEMBL: files marked with .dna.primary.assembly, such as:
+
+[ftp://ftp.ensembl.org/](ftp://ftp.ensembl.org/) pub/release-77/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly. fa.gz
+
+
+
+## 6.3 STAR Alignment
+
+fastq files aligned in myriad using the following bash script:
+
+```bash
+#!/bin/bash -l
+#$ -S /bin/bash
+#$ -l h_rt=16:00:00
+#$ -l mem=124G
+#$ -N star
+#$ -pe smp 12
+#$ -wd /home/sejjide/Scratch/paper
+
+module load star/2.5.2a
+
+for i in $(ls *.fastq.gz | rev | cut -c 13- | rev | uniq);
+do
+STAR --genomeDir ~/Scratch/genome/star_43bp/ \
+--sjdbGTFfile ~/Scratch/genome/Homo_sapiens.GRCh38.86.gtf \
+--sjdbOverhang 42 --readFilesIn ${i}_R1.fastq.gz ${i}_R2.fastq.gz \
+--readFilesCommand zcat --outSAMtype BAM SortedByCoordinate \
+--limitBAMsortRAM 12000000000 --runThreadN 12 --twopassMode Basic \
+--outFileNamePrefix ${i%.*} ;
+done;
+```
+
+```bash
+# Rename files 
+rename -v 's/Aligned\.sortedByCoord\.out//' *.bam
+```
+
+
+
+## 6.4 Counting reads using featureCounts
+
+
+
