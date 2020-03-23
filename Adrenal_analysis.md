@@ -643,5 +643,7 @@ rename -v 's/Aligned\.sortedByCoord\.out//' *.bam
 
 ## 6.4 Counting reads using featureCounts
 
+I use the 
+
 
 
