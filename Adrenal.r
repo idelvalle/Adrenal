@@ -476,7 +476,7 @@ DESeq2::plotMA(res_shr.adrenal.karyotype, ylim=c(-9,9))
 
 res_shr.adrenal.karyotype.symbol <- convert(res_shr.adrenal.karyotype)
 
-write.csv(res_shr.adrenal.karyotype.symbol, file="results/results.Adrenal.XY.vs.XX.shr.csv", row.names = FALSE)
+write.csv(res_shr.adrenal.karyotype.symbol, file="results/Adrenal/results.Adrenal.XY.vs.XX.shr.csv", row.names = FALSE)
 
 
 
@@ -491,7 +491,7 @@ resultsNames(dds_lrt)
 normalized_counts.stage <- counts(dds_lrt, normalized=TRUE)
 head(normalized_counts.stage)
 
-write.table(normalized_counts.stage, file="results/normalized_counts.stage.txt", sep="\t", quote=F, col.names=NA)
+write.table(normalized_counts.stage, file="results/Adrenal/TimeCourse/normalized_counts.stage.txt", sep="\t", quote=F, col.names=NA)
 
 ###### CS23 vs CS20.21 #######
 
@@ -505,7 +505,7 @@ DESeq2::plotMA(res_LRT_shr_CS23.20, ylim=c(-9,9))
 
 res_shr_CS23.20.symbol <- convert(res_LRT_shr_CS23.20)
 
-write.csv(res_shr_CS23.20.symbol, file="results/results.Adrenal.CS23.vs.CS20.21.shr.csv", row.names = FALSE)
+write.csv(res_shr_CS23.20.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.CS23.vs.CS20.21.shr.csv", row.names = FALSE)
 
 ###### F2 vs CS20.21 #######
 
@@ -519,7 +519,7 @@ DESeq2::plotMA(res_LRT_shr_F2.20, ylim=c(-9,9))
 
 res_shr_F2.20.symbol <- convert(res_LRT_shr_F2.20)
 
-write.csv(res_shr_F2.20.symbol, file="results/results.Adrenal.F2.vs.CS20.21.shr.csv", row.names = FALSE)
+write.csv(res_shr_F2.20.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.F2.vs.CS20.21.shr.csv", row.names = FALSE)
 
 
 ###### F4.5 vs CS20.21 #######
@@ -535,7 +535,7 @@ DESeq2::plotMA(res_LRT_shr_F5.20, ylim=c(-9,9))
 res_shr_F5.20.symbol <- convert(res_LRT_shr_F5.20)
 
 
-write.csv(res_shr_F5.20.symbol, file="results/results.Adrenal.F4.5.vs.CS20.21.csv", row.names = FALSE)
+write.csv(res_shr_F5.20.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.F4.5.vs.CS20.21.csv", row.names = FALSE)
 
 ###### F2 vs CS23 #######
 
@@ -549,7 +549,7 @@ DESeq2::plotMA(res_LRT_shr_F2.23, ylim=c(-9,9))
 
 res_shr_F2.23.symbol <- convert(res_LRT_shr_F2.23)
 
-write.csv(res_shr_F2.23.symbol, file="results/results.Adrenal.F2.vs.CS23.shr.csv",row.names = FALSE)
+write.csv(res_shr_F2.23.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.F2.vs.CS23.shr.csv",row.names = FALSE)
 
 ######## F4.5 vs F2 #########
 
@@ -563,7 +563,7 @@ DESeq2::plotMA(res_LRT_shr_F5.F2, ylim=c(-9,9))
 
 res_shr_F5.F2.symbol <- convert(res_LRT_shr_F5.F2)
 
-write.csv(res_shr_F5.F2.symbol, file="results/results.Adrenal.F4.5.vs.F2.shr.csv",row.names = FALSE)
+write.csv(res_shr_F5.F2.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.F4.5.vs.F2.shr.csv",row.names = FALSE)
 
 
 ######## F4.5 vs CS23 #########
@@ -578,7 +578,7 @@ DESeq2::plotMA(res_LRT_shr_F5.23, ylim=c(-9,9))
 
 res_shr_F5.23.symbol <- convert(res_LRT_shr_F5.23)
 
-write.csv(res_shr_F5.23.symbol, file="results/results.Adrenal.F4.5.vs.CS23.shr.csv",row.names = FALSE)
+write.csv(res_shr_F5.23.symbol, file="results/Adrenal/TimeCourse/results.Adrenal.F4.5.vs.CS23.shr.csv",row.names = FALSE)
 
 ################## Identifying gene clusters exhibiting particular patterns across samples  ################
 
@@ -614,7 +614,7 @@ head(patterns_CS23.20.genes)
 
 patterns_CS23.20.genes <- left_join(patterns_CS23.20.genes, res_shr_CS23.20.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-write.csv(patterns_CS23.20.genes, file="results/patterns.Adrenal.CS23.vs.CS20.21.shr.lFC.0.7.csv", row.names = F)
+write.csv(patterns_CS23.20.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.CS23.vs.CS20.21.shr.lFC.0.7.csv", row.names = F)
 
 ############ F2 vs CS20.21 ###########
 
@@ -646,7 +646,7 @@ head(patterns_F2.20.genes)
 
 patterns_F2.20.genes <- left_join(patterns_F2.20.genes, res_shr_F2.20.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-write.csv(patterns_F2.20.genes, file="results/patterns.Adrenal.F2.vs.CS20.21.shr.lFC.1.csv", row.names = F)
+write.csv(patterns_F2.20.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.F2.vs.CS20.21.shr.lFC.1.csv", row.names = F)
 
 
 ############ F4.5 vs CS20.21 ###########
