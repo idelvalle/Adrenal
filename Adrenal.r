@@ -442,10 +442,7 @@ heatmap.top200.vsd.cluster <- pheatmap(top_genes.vsd[1:200,], cluster_rows = F, 
 
 dev.off()
 
-save.image(file = "Adrenal.RData")
 
-#############################################################################
-#############################################################################
 ###################### VOLCANO PLOT ########################
 
 res_tableOE_tb.v <- res_tableOE_tb %>% 
@@ -677,7 +674,7 @@ head(res_shr_F5.20.symbol)
 head(patterns_F5.20.genes)
 
 patterns_F5.20.genes <- left_join(patterns_F5.20.genes, res_shr_F5.20.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
-write.csv(patterns_F5.20.genes, file="results/patterns.Adrenal.F4.5.vs.CS20.21.shr.lFC.1.csv", row.names = F)
+write.csv(patterns_F5.20.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.F4.5.vs.CS20.21.shr.lFC.1.csv", row.names = F)
 
 ###### F2 vs CS23 #######
 
@@ -707,7 +704,7 @@ head(res_shr_F2.23.symbol)
 head(patterns_F2.23.genes)
 
 patterns_F2.23.genes <- left_join(patterns_F2.23.genes, res_shr_F2.23.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
-write.csv(patterns_F2.23.genes, file="results/patterns.Adrenal.F2.vs.CS23.shr.lFC.1.csv", row.names = F)
+write.csv(patterns_F2.23.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.F2.vs.CS23.shr.lFC.1.csv", row.names = F)
 
 ######## F4.5 vs F2 #########
 
@@ -737,7 +734,7 @@ head(res_shr_F5.F2.symbol)
 head(patterns_F5.F2.genes)
 
 patterns_F5.F2.genes <- left_join(patterns_F5.F2.genes, res_shr_F5.F2.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
-write.csv(patterns_F5.F2.genes, file="results/patterns.Adrenal.F4.5.vs.F2.shr.lFC.1.csv", row.names = F)
+write.csv(patterns_F5.F2.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.F4.5.vs.F2.shr.lFC.1.csv", row.names = F)
 
 
 ######## F4.5 vs CS23 #########
@@ -769,7 +766,7 @@ head(patterns_F5.23.genes)
 
 patterns_F5.23.genes <- left_join(patterns_F5.23.genes, res_shr_F5.23.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-write.csv(patterns_F5.23.genes, file="results/patterns.Adrenal.F4.5.vs.CS23.shr.lFC.1.csv", row.names = F)
+write.csv(patterns_F5.23.genes, file="results/Adrenal/TimeCourse/patterns/patterns.Adrenal.F4.5.vs.CS23.shr.lFC.1.csv", row.names = F)
 
 
 ################# SEX DIFFERENCES ##############################
@@ -780,14 +777,14 @@ View(countdata.adrenal)
 
 rownames(stages.adrenal) == colnames(countdata.adrenal)
 
-batch.k <- as.factor(karyotype$Batch)
-
 # Create a coldata frame and instantiate the DESeqDataSet. See ?DESeqDataSetFromMatrix
 
-coldata.k <- data.frame(row.names=colnames(countdata.adrenal.karyotype), batch.k, karyotype$stage.sex, karyotype$Stage, karyotype$Sex)
+karyotype.stage.sex <- as.factor(stages.adrenal$stage.sex)
+
+coldata.k <- data.frame(row.names=colnames(countdata.adrenal), batch.adrenal, sex.adrenal, stage.adrenal, karyotype.stage.sex)
 coldata.k
 
-dds.k <- DESeqDataSetFromMatrix(countData=countdata.adrenal.karyotype, colData=coldata.k, design=~batch.k + karyotype.stage.sex)
+dds.k <- DESeqDataSetFromMatrix(countData=countdata.adrenal, colData=coldata.k, design=~batch.adrenal + karyotype.stage.sex)
 
 dds.k <- dds.k[ rowSums(counts(dds.k)) > 1, ]
 
@@ -798,20 +795,20 @@ head(normalized_counts.k)
 
 resultsNames(dds.k)
 
-res.CS20.21.k <- results(dds.k, contrast=c("karyotype.stage.sex","CS20.21.XY","CS20.21.XX"), independentFiltering=FALSE, cooksCutoff = FALSE)
-res.CS20.21.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","CS20.21.XY","CS20.21.XX"), res = res.CS20.21.k) 
+res.CS20.21.k <- results(dds.k, contrast=c("karyotype.stage.sex","CS20.21XY","CS20.21XX"), independentFiltering=FALSE, cooksCutoff = FALSE)
+res.CS20.21.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","CS20.21XY","CS20.21XX"), res = res.CS20.21.k) 
 summary(res.CS20.21.k.shr)
 
-res.CS23.k <- results(dds.k, contrast=c("karyotype.stage.sex","CS23.XY","CS23.XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.CS23.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","CS23.XY","CS23.XX"), res = res.CS23.k) 
+res.CS23.k <- results(dds.k, contrast=c("karyotype.stage.sex","CS23XY","CS23XX"), independentFiltering=F, cooksCutoff = FALSE) 
+res.CS23.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","CS23XY","CS23XX"), res = res.CS23.k) 
 summary(res.CS23.k.shr)
 
-res.F2.k <- results(dds.k, contrast=c("karyotype.stage.sex","F2.XY","F2.XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F2.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F2.XY","F2.XX"), res = res.F2.k) 
+res.F2.k <- results(dds.k, contrast=c("karyotype.stage.sex","F2XY","F2XX"), independentFiltering=F, cooksCutoff = FALSE) 
+res.F2.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F2XY","F2XX"), res = res.F2.k) 
 summary(res.F2.k.shr)
 
-res.F4.5.k <- results(dds.k, contrast=c("karyotype.stage.sex","F4.5.XY","F4.5.XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F4.5.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F4.5.XY","F4.5.XX"), res = res.F4.5.k) 
+res.F4.5.k <- results(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","F4.5XX"), independentFiltering=F, cooksCutoff = FALSE) 
+res.F4.5.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","F4.5XX"), res = res.F4.5.k) 
 summary(res.F4.5.k.shr)
 
 res.CS20.21.k.shr.symbol <- convert(res.CS20.21.k.shr)
@@ -820,10 +817,16 @@ res.F2.sex.k.symbol <- convert(res.F2.k.shr)
 res.F4.5.sex.k.symbol <- convert(res.F4.5.k.shr)
 
 
-write.csv(res.CS20.21.k.shr.symbol, file="results/results.Adrenal.karyotype.shr.CS20.21.XY.vs.XX.csv",row.names = F)
-write.csv(res.CS23.sex.k.symbol, file="results/results.Adrenal.karyotype.shr.CS23.XY.vs.XX.csv",row.names = F)
-write.csv(res.F2.sex.k.symbol, file="results/results.Adrenal.karyotype.shr.F2.XY.vs.XX.csv",row.names = F)
-write.csv(res.F4.5.sex.k.symbol, file="results/results.Adrenal.karyotype.shr.F4.5.XY.vs.XX.csv",row.names = F)
+write.csv(res.CS20.21.k.shr.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.CS20.21.XY.vs.XX.csv",row.names = F)
+write.csv(res.CS23.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.CS23.XY.vs.XX.csv",row.names = F)
+write.csv(res.F2.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.F2.XY.vs.XX.csv",row.names = F)
+write.csv(res.F4.5.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.F4.5.XY.vs.XX.csv",row.names = F)
+
+
+save.image(file = "Adrenal.RData")
+
+#############################################################################
+#############################################################################
 
 ## rld plots with 37 Adrenal samples ##
 
