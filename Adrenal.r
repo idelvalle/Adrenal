@@ -811,189 +811,91 @@ res.F4.5.k <- results(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","F4.5XX")
 res.F4.5.k.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","F4.5XX"), res = res.F4.5.k) 
 summary(res.F4.5.k.shr)
 
+res.late.early.XY <- results(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","CS20.21XY"), independentFiltering=F, cooksCutoff = FALSE) 
+res.late.early.XY.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F4.5XY","CS20.21XY"), res = res.late.early.XY) 
+summary(res.late.early.XY.shr)
+
+res.late.early.XX <- results(dds.k, contrast=c("karyotype.stage.sex","F4.5XX","CS20.21XX"), independentFiltering=F, cooksCutoff = FALSE) 
+res.late.early.XX.shr <- lfcShrink(dds.k, contrast=c("karyotype.stage.sex","F4.5XX","CS20.21XX"), res = res.late.early.XY) 
+summary(res.late.early.XX.shr)
+
+
 res.CS20.21.k.shr.symbol <- convert(res.CS20.21.k.shr)
 res.CS23.sex.k.symbol <- convert(res.CS23.k.shr)
 res.F2.sex.k.symbol <- convert(res.F2.k.shr)
 res.F4.5.sex.k.symbol <- convert(res.F4.5.k.shr)
+res.late.early.XY.symbol <- convert(res.late.early.XY.shr)
+res.late.early.XX.symbol <- convert(res.late.early.XX.shr)
 
 
 write.csv(res.CS20.21.k.shr.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.CS20.21.XY.vs.XX.csv",row.names = F)
 write.csv(res.CS23.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.CS23.XY.vs.XX.csv",row.names = F)
 write.csv(res.F2.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.F2.XY.vs.XX.csv",row.names = F)
 write.csv(res.F4.5.sex.k.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.karyotype.shr.F4.5.XY.vs.XX.csv",row.names = F)
+write.csv(res.late.early.XY.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.shr.F4.5.XY.vs.CS20.21.XY.csv",row.names = F)
+write.csv(res.late.early.XX.symbol, file="results/Adrenal/TimeCourse/SexDifferences/results.Adrenal.shr.F4.5.XX.vs.CS.20.21.XX.csv",row.names = F)
 
-
-save.image(file = "Adrenal.RData")
-
-#############################################################################
-#############################################################################
-
-## rld plots with 37 Adrenal samples ##
-
-rld.k <- rlog(dds.k, blind=TRUE)
-
-### PCA Plot for rest components #######
-
-rld_mat.k <- assay(rld.k)
-pca.adrenal.k <- prcomp(t(rld_mat.k))
-scores <- as.data.frame(pca.adrenal.k$x) 
-
-summary(pca.adrenal.k)
-get_eig(pca.adrenal.k)
-Screeplot.k <- fviz_eig(pca.adrenal.k)
-
-# Create data frame with metadata and PC3 and PC4 values for input to ggplot
-df.adrenal.k <- cbind(karyotype, pca.adrenal.k$x)
-
-ggplot(df.adrenal.k[df.adrenal.k$Stage=="CS20.21",], aes(PC1, PC2, color = Sex, shape = Stage)) + geom_point(size=3)+ 
-  coord_fixed() + theme_classic() + xlab("PC1") + ylab("PC2")
-ggplot(df.adrenal.k[df.adrenal.k$Stage=="CS20.21",], aes(PC2, PC3, color = Sex, shape = Stage)) + geom_point(size=3)+ 
-  coord_fixed() + theme_classic() + xlab("PC2") + ylab("PC3")
-
-
-pca.adrenal.k.2.3.labels <- ggplot(df.adrenal.k, aes(PC2, PC3, color = Sex, shape = Stage)) + geom_point(size=3)+ 
-  coord_fixed() + theme_classic() + geom_text(aes(label=karyotype$Sample_origin), hjust=-0.25, vjust=0, size=2) + xlab("PC2: 13% variance") + ylab("PC3: 9% variance")
-
-pca.adrenal.k.1.2.labels <- ggplot(df.adrenal.k, aes(PC1, PC2, color = Sex, shape = Stage)) + geom_point(size=3)+ 
-  coord_fixed() + theme_classic() + geom_text(aes(label=karyotype$Sample_origin), hjust=-0.25, vjust=0, size=2) + xlab("PC1: 32% variance") + ylab("PC2: 13% variance")
-
-
-ggplot(df.adrenal.k) + geom_point(aes(x=PC1, y=PC2, color = Sex, shape = Stage), size = 3)+  xlab("PC1: 32% variance") + ylab("PC2: 13% variance")+ theme_classic()
-ggplot(df.adrenal) + geom_point(aes(x=PC2, y=PC3,color = Sex, shape = Stage ), size = 3)+ xlab("PC2: 13% variance") + ylab("PC3: 9% variance")+ theme_classic()
-
-plot3d(scores[,1:3], size=10, type='p', 
-       xlim = c(-50,50), ylim=c(-50,50), zlim=c(-50,50))
-text3d(scores[,1]+2, scores[,2]+10, scores[,3]+2,
-       texts=karyotype$stage.sex, cex= 0.7, pos=3)
-
-stages.adrenal.sex <- subset(stages.adrenal, !(rownames(stages.adrenal) %in% c("A11415","A11461","A11047", "A13116")))
-
-coldata.adrenal.sex <- subset(coldata.adrenal, !(rownames(coldata.adrenal) %in% c("A11415","A11461","A11047", "A13116")))
-r <- rownames(coldata.adrenal.sex)
-
-countdata.adrenal.sex <- countdata.adrenal[,r]
-
-rownames(coldata.adrenal.sex) == colnames(countdata.adrenal.sex)
-
-dds.sex <- DESeqDataSetFromMatrix(countData=countdata.adrenal.sex, colData=coldata.adrenal.sex, design=~batch.adrenal + stage.sex)
-
-dds.sex
-
-dds.sex <- dds.sex[ rowSums(counts(dds.sex)) > 1, ] #We apply the most minimal filtering rule: removing rows of the DESeqDataSet that have no counts, or only a single count across all samples. 
-
-
-dds.sex <- DESeq(dds.sex)
-sizeFactors(dds.sex)
-normalized_counts.sex <- counts(dds.sex, normalized=TRUE)
-head(normalized_counts.sex)
-
-write.table(normalized_counts.sex, file="results/normalized_counts.adrenal.sex.txt", sep="\t", quote=F, col.names=NA)
-
-resultsNames(dds.sex)
-
-res.CS20.21.sex <- results(dds.sex, contrast=c("stage.sex","CS20.21XY","CS20.21XX"), independentFiltering=FALSE, cooksCutoff = FALSE)
-res.CS20.21.sex.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","CS20.21XY","CS20.21XX"), res = res.CS20.21.sex) 
-
-res.CS23.sex <- results(dds.sex, contrast=c("stage.sex","CS23XY","CS23XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.CS23.sex.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","CS23XY","CS23XX"), res = res.CS23.sex) 
-
-res.F2.sex <- results(dds.sex, contrast=c("stage.sex","F2XY","F2XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F2.sex.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","F2XY","F2XX"), res = res.F2.sex) 
-
-res.F4.5.sex <- results(dds.sex, contrast=c("stage.sex","F4.5XY","F4.5XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F4.5.sex.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","F4.5XY","F4.5XX"), res = res.F4.5.sex) 
-
-res.F4.5.CS21.XY <- results(dds.sex, contrast=c("stage.sex","F4.5XY","CS20.21XY"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F4.5.CS21.XY.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","F4.5XY","CS20.21XY"), res = res.F4.5.CS21.XY) 
-
-res.F4.5.CS21.XX <- results(dds.sex, contrast=c("stage.sex","F4.5XX","CS20.21XX"), independentFiltering=F, cooksCutoff = FALSE) 
-res.F4.5.CS21.XX.shr <- lfcShrink(dds.sex, contrast=c("stage.sex","F4.5XX","CS20.21XX"), res = res.F4.5.CS21.XX) 
-
-
-res.CS20.21.sex.shr.symbol <- mapIds(org.Hs.eg.db, rownames(res.CS20.21.sex.shr), 'SYMBOL', 'ENSEMBL')
-
-res.CS20.21.sex.shr.symbol <- convert(res.CS20.21.sex.shr)
-res.CS23.sex.shr.symbol <- convert(res.CS23.sex.shr)
-res.F2.sex.shr.symbol <- convert(res.F2.sex.shr)
-res.F4.5.sex.shr.symbol <- convert(res.F4.5.sex.shr)
-res.F4.5.CS21.XY.shr.symbol <- convert(res.F4.5.CS21.XY.shr)
-res.F4.5.CS21.XX.shr.symbol <- convert(res.F4.5.CS21.XX.shr)
-
-write.csv(res.CS20.21.sex.shr.symbol, file="results/results.Adrenal.shr.CS20.21.XY.vs.XX.csv",row.names = FALSE)
-write.csv(res.CS23.sex.shr.symbol, file="results/results.Adrenal.shr.CS23.XY.vs.XX.csv",row.names = FALSE)
-write.csv(res.F2.sex.shr.symbol, file="results/results.Adrenal.shr.F2.XY.vs.XX.csv",row.names = FALSE)
-write.csv(res.F4.5.sex.shr.symbol, file="results/results.Adrenal.shr.F4.5.XY.vs.XX.csv",row.names = FALSE)
-write.csv(res.F4.5.CS21.XY.shr.symbol, file="results/results.Adrenal.shr.F4.5.XY.vs.CS20.21.XY.csv",row.names = FALSE)
-write.csv(res.F4.5.CS21.XX.shr.symbol, file="results/results.Adrenal.shr.F4.5.XX.vs.CS20.21.XX.csv",row.names = FALSE)
 
 
 ############ F4.5 XY vs CS20.21 XY ###########
 
 
 # Subset the LRT results to return genes with padj < 0.05
-clustering_sig_genes_F5.20.XY <- convert(res.F4.5.CS21.XY.shr) %>%
+clustering_sig_genes_F5.20.XY <- convert(res.late.early.XY.shr) %>%
   as_tibble() %>% 
   arrange(padj) %>%
   filter(padj < 0.05 & abs(log2FoldChange) > 0.7)
 
-nrow(clustering_sig_genes_F5.20.XY) #5558
+nrow(clustering_sig_genes_F5.20.XY) #5712
 
 clustering_sig_genes_F5.20.XY <- clustering_sig_genes_F5.20.XY[!(clustering_sig_genes_F5.20.XY$hgnc_symbol==""), ]
-nrow(clustering_sig_genes_F5.20.XY) #5208
+nrow(clustering_sig_genes_F5.20.XY) #5340
 
 
-# Obtain rlog values for those significant genes
+# Obtain values for those significant genes
 
-cluster_rld_F5.20.XY <- rld.df[clustering_sig_genes_F5.20.XY$ensembl, ]
+cluster_vsd_F5.20.XY <- vsd.df[clustering_sig_genes_F5.20.XY$ensembl, ]
 
-patterns_F5.20.XY <- degPatterns(cluster_rld_F5.20.XY, metadata = stages.adrenal, time = "Stage")
+patterns_F5.20.XY <- degPatterns(cluster_vsd_F5.20.XY, metadata = stages.adrenal, time = "Stage")
 
 patterns_F5.20.genes.XY <- convert(patterns_F5.20.XY$df)
 
-nrow(patterns_F5.20.genes.XY) #5194
+nrow(patterns_F5.20.genes.XY) #5331
 
-head(res.F4.5.CS21.XY.shr.symbol)
-head(patterns_F5.20.genes.XY)
+patterns_F5.20.genes.XY <- left_join(patterns_F5.20.genes.XY, res.late.early.XY.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-patterns_F5.20.genes.XY <- left_join(patterns_F5.20.genes.XY, res.F4.5.CS21.XY.shr.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
-
-write.csv(patterns_F5.20.genes.XY, file="results/patterns.Adrenal.F4.5.XY.vs.CS20.21.XY.LFC.0.7.shr.csv")
+write.csv(patterns_F5.20.genes.XY, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XY.vs.CS20.21.XY.LFC.0.7.shr.csv")
 
 
 ############ F4.5 XX vs CS20.21 XX ###########
 
 
 # Subset the LRT results to return genes with padj < 0.05
-clustering_sig_genes_F5.20.XX <- convert(res.F4.5.CS21.XX.shr) %>%
+
+clustering_sig_genes_F5.20.XX <- convert(res.late.early.XX.shr) %>%
   as_tibble() %>% 
   arrange(padj) %>%
   filter(padj < 0.05 & abs(log2FoldChange) > 0.7)
 
-nrow(clustering_sig_genes_F5.20.XX) #3021
+nrow(clustering_sig_genes_F5.20.XX) #3449
 
 clustering_sig_genes_F5.20.XX <- clustering_sig_genes_F5.20.XX[!(clustering_sig_genes_F5.20.XX$hgnc_symbol==""), ]
-nrow(clustering_sig_genes_F5.20.XX) #2881
+nrow(clustering_sig_genes_F5.20.XX) #3246
 
 
-# Obtain rlog values for those significant genes
+# Obtain values for those significant genes
 
-cluster_rld_F5.20.XX <- rld.df[clustering_sig_genes_F5.20.XX$ensembl, ]
+cluster_vsd_F5.20.XX <- vsd.df[clustering_sig_genes_F5.20.XX$ensembl, ]
 
-patterns_F5.20.XX <- degPatterns(cluster_rld_F5.20.XX, metadata = stages.adrenal, time = "Stage")
+patterns_F5.20.XX <- degPatterns(cluster_vsd_F5.20.XX, metadata = stages.adrenal, time = "Stage")
 
 patterns_F5.20.genes.XX <- convert(patterns_F5.20.XX$df)
 
-nrow(patterns_F5.20.genes.XX) #2871
+nrow(patterns_F5.20.genes.XX) #3229
 
-head(res.F4.5.CS21.XX.shr.symbol)
-head(patterns_F5.20.genes.XX)
+patterns_F5.20.genes.XX <- left_join(patterns_F5.20.genes.XX, res.late.early.XX.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-patterns_F5.20.genes.XX <- left_join(patterns_F5.20.genes.XX, res.F4.5.CS21.XX.shr.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
-
-write.csv(patterns_F5.20.genes.XX, file="results/patterns.Adrenal.F4.5.XX.vs.CS20.21.XX.shr.csv")
-
-
-
+write.csv(patterns_F5.20.genes.XX, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XX.vs.CS20.21.XX.LFC.0.7.shr.csv")
 
 
 ################ TPM PLOTS #################
@@ -1026,11 +928,6 @@ write.table(tpms.all, file="results/TPM.All.csv", sep=",")
 
 head(tpms.all)
 
-#colnames(tpms.all) == rownames(stages)
-
-
-
-
 
 ######## ADRENAL ############
 
@@ -1045,37 +942,13 @@ colMeans(tpms)
 
 write.table(tpms, file="results/TPM.Adrenal.csv", sep=",")
 
-stages.adrenal
-
-head(tpms)
-
 colnames(tpms) == rownames(stages.adrenal)
-
-
-######## ADRENAL.SEX ############
-
-head(normalized_counts.sex)
-
-gene.length.sex <- subset(gene.length, (rownames(gene.length) %in% rownames(normalized_counts.sex)))
-
-tpms.sex <- apply(normalized_counts.sex, 2, function(x) tpm(x, gene.length.sex$Length))
-
-colSums(tpms.sex)
-colMeans(tpms.sex)
-
-write.table(tpms.sex, file="results/TPM.Adrenal.sex.csv", sep=",")
-
-stages.adrenal.sex
-
-head(tpms.sex)
-
-colnames(tpms.sex) == rownames(stages.adrenal.sex)
 
 
 ########## Heatmap ADRENAL STEROIDOGENESIS #############
 
 head(normalized_counts.adrenal)
-head(rld.df)
+head(vsd.df)
 
 counts_heatmap <- as.data.frame(normalized_counts.adrenal)
 head(counts_heatmap)
@@ -1098,126 +971,41 @@ tfs <- c("FOSL1", "MAFF", "ZNF774", "ARX", "HOXA5", "NR4A2", "NR4A3", "HES6", "K
 hmap <- counts_heatmap[steroido,]
 hmap.tf <- counts_heatmap[tfs,]
 hmap
-anno <- stages.adrenal$sample.dev.origin
 
-heatmap.steroido.counts <- pheatmap(hmap, cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
+heatmap.steroido.counts.cluster <- pheatmap(hmap, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.adrenal.dev.origin)
 
-heatmap.steroido.counts.cluster <- pheatmap(hmap, cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-hmap.tf.counts <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-hmap.tf.counts.cluster <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
+hmap.tf.counts.cluster <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = T, scale = "row",labels_col = sample.adrenal.dev.origin)
 
 dev.off()
 
-head(rld.df)
+head(vsd.df)
 
-counts_heatmap.rld <- rld.df
-head(counts_heatmap.rld)
+counts_heatmap.vsd <- vsd.df
+head(counts_heatmap.vsd)
 
-counts_heatmap.rld <- convert(counts_heatmap.rld)
-nrow(counts_heatmap.rld)
+counts_heatmap.vsd <- convert(counts_heatmap.vsd)
+nrow(counts_heatmap.vsd)
 
-counts_heatmap.rld <- counts_heatmap.rld[!(counts_heatmap.rld$hgnc_symbol==""), ]
+counts_heatmap.vsd <- counts_heatmap.vsd[!(counts_heatmap.vsd$hgnc_symbol==""), ]
 
-counts_heatmap.rld <- counts_heatmap.rld[!duplicated(counts_heatmap.rld$hgnc_symbol),]
+counts_heatmap.vsd <- counts_heatmap.vsd[!duplicated(counts_heatmap.vsd$hgnc_symbol),]
 
-rownames(counts_heatmap.rld) <- counts_heatmap.rld$hgnc_symbol
+rownames(counts_heatmap.vsd) <- counts_heatmap.vsd$hgnc_symbol
 
-counts_heatmap.rld <- counts_heatmap.rld %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
-dim(counts_heatmap.rld)
+counts_heatmap.vsd <- counts_heatmap.vsd %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
+dim(counts_heatmap.vsd)
 
 
 steroido <- c("MC2R", "MRAP", "STAR", "CYP11A1", "HSD3B2", "CYP17A1", "POR", "CYB5A", "SULT2A1", "CYP21A2", "CYP11B1", "CYP11B2")
-hmap.rld <- counts_heatmap.rld[steroido,]
-hmap.rld.tf <- counts_heatmap.rld[tfs,]
+hmap.vsd <- counts_heatmap.vsd[steroido,]
+hmap.vsd.tf <- counts_heatmap.vsd[tfs,]
 
-hmap.rld
-anno <- stages.adrenal$sample.dev.origin
+hmap.vsd
 
-heatmap.steroido.rld <- pheatmap(hmap.rld, cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-heatmap.steroido.rld.cluster <- pheatmap(hmap.rld, cluster_rows = F, cluster_cols = T, clustering_distance_cols ="euclidean",clustering_method = "complete",scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-heatmap.rld.tf <- pheatmap(hmap.rld.tf, cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-heatmap.rld.tf.cluster <- pheatmap(hmap.rld.tf, cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-
-############################################ HEATMAP Y GENES ######################################
-
-mart.Y <- useMart(biomart="ensembl", dataset="hsapiens_gene_ensembl")
-
-results.Y <- getBM(attributes = c("chromosome_name", "ensembl_gene_id", "hgnc_symbol"), filters = "chromosome_name", values = "Y", mart = mart.Y)
-
-write.table(results.Y, file="results/ChrY.Genes.csv", sep=",")
-
-results.Y <- results.Y %>% filter(hgnc_symbol != "")
-
-
-
-
-
-
-
-
-head(normalized_counts.Y)
-
-
-counts_heatmap.sex <- as.data.frame(normalized_counts.Y)
-head(counts_heatmap.sex)
-
-stages.xy <- stages[stages$Sex=="XY",]
-
-counts_heatmap.sex <- counts_heatmap.sex[,row.names(stages.xy)]
-
-counts_heatmap.y <- convert(counts_heatmap.sex)
-nrow(counts_heatmap.y)
-
-counts_heatmap.all <- counts_heatmap.y[!(counts_heatmap.y$hgnc_symbol==""), ]
-
-counts_heatmap.all <- counts_heatmap.all[!duplicated(counts_heatmap.all$hgnc_symbol),]
-
-rownames(counts_heatmap.all) <- counts_heatmap.all$hgnc_symbol
-
-
-write.table(counts_heatmap.all, file="results/counts_heatmap.Y.ALL.csv", sep=",")
-
-
-counts_heatmap.all <- counts_heatmap.all %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
-dim(counts_heatmap.all)
-
-##Go through each row and determine if a value is zero
-#row_sub = apply(counts_heatmap.y, 1, function(row) all(row !=0 ))
-##Subset as usual
-#counts_heatmap.y <- counts_heatmap.y[row_sub,]
-
-
-y <- results.Y$hgnc_symbol
-
-hmap.all <- counts_heatmap.all[y,]
-
-hmap.y <- hmap.all[complete.cases(hmap.all),]
-
-write.table(hmap.y, file="results/hmap.y.ALL.csv", sep=",")
-
-hmap.y <- hmap.y[apply(hmap.y, 1, function(row) {any(row > 0)}),]
-
-anno.y <- stages$sample.dev.origin
-
-heatmap.y.counts <- pheatmap(hmap.y, cluster_rows = F, cluster_cols = F, fontsize_row = 8, scale = "row", labels_col = anno.y, fontsize_col = 8, show_rownames = T)
-
-heatmap.y.counts.cluster <- pheatmap(hmap.y, cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 8, labels_col = anno.y, fontsize_col = 8, show_rownames = T)
+heatmap.steroido.vsd.cluster <- pheatmap(hmap.vsd, cluster_rows = F, cluster_cols = T, scale='row', labels_col = sample.adrenal.dev.origin)
+heatmap.vsd.tf.cluster <- pheatmap(hmap.vsd.tf, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.adrenal.dev.origin)
 
 dev.off()
-
-
-
-
-
-
-
-
 
 
 
@@ -1274,6 +1062,16 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
+
+save.image(file = "Adrenal.RData")
+
+#############################################################################
+#############################################################################
+
+
+
+
 
 colData(dds)
 
@@ -1547,31 +1345,4 @@ de.genes <- rownames(res_LRT_shr_F5.20)[ which(res_LRT_shr_F5.20$padj < 0.1) ]
 
 table(assayed.genes)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#test
-
-res_shr_F5.20.symbol
 
