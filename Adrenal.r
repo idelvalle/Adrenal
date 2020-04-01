@@ -1073,7 +1073,10 @@ save.image(file = "Adrenal.RData")
 
 
 
-colData(dds)
+colData(dds) # dds- all samples
+colData(dds.adrenal) # dds.adrenal Only adrenal samples
+
+
 
 counts_plot <- function(g){
   geneName <- mapIds(Homo.sapiens,keys=g,column="ENSEMBL",keytype="SYMBOL")
@@ -1087,7 +1090,7 @@ counts_plot <- function(g){
 }
 
 
-counts_plot("HOPX")
+counts_plot("ACE2")
 counts_plot("CCN3")
 
 counts_plot("NEUROD4")
@@ -1099,24 +1102,24 @@ counts_plot("NR5A1")
 counts_plot("IL1RL1")
 
 
-colData(dds.sex)
+colData(dds.adrenal)
 
 counts_plot_sex <- function(g){
   geneName <- mapIds(Homo.sapiens,keys=g,column="ENSEMBL",keytype="SYMBOL")
-  geneCounts <- plotCounts(dds.sex, gene = geneName, intgroup = c("batch.adrenal", "stage.sex"),returnData = TRUE)
+  geneCounts <- plotCounts(dds.adrenal, gene = geneName, intgroup = c("batch.adrenal", "stage.sex"),returnData = TRUE)
   t <- ggplot(geneCounts, aes(x = stage.sex, y = count, fill = stage.sex)) + theme_classic() + scale_y_log10() + ggtitle(g)+ geom_violin(trim = T)+ geom_boxplot(fill = "grey", width=0.1)
   print(geneCounts)
   list(t) # If we need graph on same figure use multiplot(t,k, cols = 2)
 }
 
 
-counts_plot_sex("HOPX")
+counts_plot_sex("ACE2")
 counts_plot_sex("CCN3")
 
 
 counts_plot.adrenal <- function(g){
   geneName <- mapIds(Homo.sapiens,keys=g,column="ENSEMBL",keytype="SYMBOL")
-  geneCounts <- plotCounts(dds.sex, gene = geneName, intgroup = c("batch.adrenal", "sex.adrenal", "stage.sex", "stage.adrenal"),returnData = TRUE)
+  geneCounts <- plotCounts(dds.adrenal, gene = geneName, intgroup = c("batch.adrenal", "sex.adrenal", "stage.sex", "stage.adrenal"),returnData = TRUE)
   t <- ggplot(geneCounts, aes(x = stage.adrenal, y = count)) + geom_violin(trim=T,aes(fill=stage.adrenal))  + theme_classic() + scale_y_log10() + geom_boxplot(fill = "grey",width=0.1) +
     ggtitle(g)
   p <- ggplot(geneCounts, aes(x = stage.adrenal, y = count)) + geom_violin(trim=T,aes(fill=stage.adrenal))  + theme_classic() + scale_y_log10() + geom_boxplot(fill = "grey", width=0.1) +
@@ -1128,26 +1131,9 @@ counts_plot.adrenal <- function(g){
 }
 
 
-counts_plot.adrenal("HOPX")
+counts_plot.adrenal("CD99L2")
 
-counts_plot.adrenal("CCN3")
-
-counts_plot.k <- function(g){
-  geneName <- mapIds(Homo.sapiens,keys=g,column="ENSEMBL",keytype="SYMBOL")
-  geneCounts <- plotCounts(dds.k, gene = geneName, intgroup = c("batch.k","karyotype.stage.sex","karyotype.Stage","karyotype.Sex"),returnData = TRUE)
-  t <- ggplot(geneCounts, aes(x = karyotype.stage.sex, y = count)) + geom_violin(trim=T,aes(fill=karyotype.Stage))  + theme_classic() + scale_y_log10() + geom_boxplot(fill = "grey",width=0.1) +
-    ggtitle(g)
-  p <- ggplot(geneCounts, aes(x = karyotype.stage.sex, y = count)) + geom_violin(trim=T,aes(fill=karyotype.Stage))  + theme_classic() + scale_y_log10() + geom_boxplot(fill = "grey", width=0.1) +
-    ggtitle(g) + facet_wrap(~karyotype.Sex)
-  print(geneCounts)
-  #print(t)
-  list(t) # If we need graph on same figure use multiplot(t,k, cols = 2)
-}
-
-counts_plot.k("ALDH1A2")
-counts_plot.k("HOPX")
-counts_plot.k("CCN3")
-
+counts_plot.adrenal("ACE2")
 
 
 tpms_plot <- function(g){
@@ -1163,7 +1149,7 @@ tpms_plot <- function(g){
   list(p,q,r)
 }
 
-tpms_plot("ALDH1A1")
+tpms_plot("CD99L2")
 
 
 
@@ -1171,178 +1157,8 @@ dev.off()
 
 
 
-###### BAR PLOT FIGURE ##################
-
-df2 <- data.frame(genes=rep(c("Up", "Down"), each=5),
-                  Log2FC=rep(c("1", "1.5", "2", "2.5", "3"),2),
-                  Number=c(1262, 519, 229, 106, 38, 1917, 750, 207, 40, 10))
-df2
 
 
-graph_Fold_Changes_F4.5.vs.CS20.21 <- ggplot(data=df2, aes(x=Log2FC, y=Number, fill=genes)) + geom_bar(stat="identity", position=position_dodge())+ scale_fill_brewer(palette="Paired") +theme_minimal() + xlab(expression(paste("Log"[2], "Fold Change")))
 
-df3 <- data.frame(genes=rep(c("Up", "Down"), each=4),
-                  Stages=rep(c("CS20-21", "CS23", "F2", "F4-5"),2),Number=c(14, 17, 19, 26, 1, 4, 3, 7)) 
-
-df3
-
-
-graph_Fold_Changes_sex <- ggplot(data=df3, aes(x=Stages, y=Number, fill=genes)) + geom_bar(stat="identity", position=position_dodge())+ scale_fill_brewer(palette="Paired") +theme_minimal() + xlab(expression(paste("Log"[2], "Fold Change")))
-################### GSEA ##################
-
-res_shr.symbol
-
-adr.vs.ctrl <- res_shr.symbol
-
-adr.vs.ctrl$fcSign <- sign(adr.vs.ctrl$log2FoldChange)
-
-adr.vs.ctrl$logP <- -log10(adr.vs.ctrl$padj)
-
-adr.vs.ctrl$metric <- adr.vs.ctrl$logP*adr.vs.ctrl$fcSign
-
-adr.vs.ctrl.gsea <- adr.vs.ctrl[,c("hgnc_symbol","stat")]
-
-gsea.adr.vs.ctrl <- adr.vs.ctrl.gsea[order(-adr.vs.ctrl.gsea$stat),]
-
-head(gsea.adr.vs.ctrl)
-
-gsea.adr.vs.ctrl <- gsea.adr.vs.ctrl[!duplicated(gsea.adr.vs.ctrl$hgnc_symbol),]
-write.table(gsea.adr.vs.ctrl, file="results/gsea.adr.vs.ctrl.metric.rnk", quote = F, sep="\t", row.names = F)
-
-
-gsea.adr.vs.ctrl[duplicated(gsea.adr.vs.ctrl$hgnc_symbol),]
-
-
-head(res_shr_F5.20.symbol)
-
-f5.vs.cs20 <- res_shr_F5.20.symbol
-
-f5.vs.cs20$fcSign <- sign(f5.vs.cs20$log2FoldChange)
-
-f5.vs.cs20$logP <- -log10(f5.vs.cs20$padj)
-
-f5.vs.cs20$metric <- f5.vs.cs20$logP*f5.vs.cs20$fcSign
-
-f5.vs.cs20.gsea <- f5.vs.cs20[,c("hgnc_symbol","stat")]
-
-gsea.f5.vs.cs20 <- f5.vs.cs20.gsea[order(-f5.vs.cs20.gsea$stat),]
-
-head(gsea.f5.vs.cs20)
-
-gsea.f5.vs.cs20 <- gsea.f5.vs.cs20[!duplicated(gsea.f5.vs.cs20$hgnc_symbol),]
-
-write.table(gsea.f5.vs.cs20, file="results/gsea.F5.vs.CS20-21.stat.rnk", quote = F, sep="\t", row.names = F)
-
-f5.vs.cs20.fc <- res_shr_F5.20.symbol
-
-f5.vs.cs20.fc[f5.vs.cs20.fc$padj >= "1.5" || f5.vs.cs20.fc$padj <= "1.5",]
-
-head(f5.vs.cs20.fc)
-
-##################################### GSEA ##############################
-
-f5.vs.cs20 <- read.table(file="results/results.Adrenal.F4.5.vs.CS20.21.csv", sep="\t", header=T)
-
-fgsea <- f5.vs.cs20 %>% 
-  dplyr::select(hgnc_symbol, rank) %>% 
-  na.omit() %>% 
-  distinct() %>% 
-  group_by(hgnc_symbol) %>% 
-  summarize(stat=mean(rank))
-
-fgsea <- f5.vs.cs20 %>% 
-  dplyr::select(hgnc_symbol, rank)
-
-
-View(fgsea)
-ranks <- deframe(fgsea) # deframe() converts two-column data frames to a named vector or list, using the first column as name and the second column as value.
-head(ranks, 20)
-
-# Load the pathways into a named list
-pathways.hallmark <- gmtPathways("data/h.all.v6.2.symbols.gmt")
-
-# Look at them all if you want (uncomment)
-# pathways.hallmark
-
-# Show the first few pathways, and within those, show only the first few genes. 
-pathways.hallmark %>% 
-  head() %>% 
-  lapply(head)
-
-fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
-
-fgseaResTidy <- fgseaRes %>%
-  as_tibble() %>%
-  arrange(desc(NES))
-
-# Show in a nice table:
-fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
-  arrange(padj) %>% 
-  DT::datatable()
-
-
-ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
-
-adr.vs.ctrl <- res_shr.symbol
-
-fgdea <- adr.vs.ctrl %>% 
-  dplyr::select(hgnc_symbol, stat) %>% 
-  na.omit() %>% 
-  distinct() %>% 
-  group_by(hgnc_symbol) %>% 
-  summarize(stat=mean(stat))
-
-fgdea <- adr.vs.ctrl %>% 
-  dplyr::select(hgnc_symbol, stat)
-
-ranks <- deframe(fgdea) # deframe() converts two-column data frames to a named vector or list, using the first column as name and the second column as value.
-head(ranks, 20)
-
-# Load the pathways into a named list
-pathways.hallmark <- gmtPathways("data/h.all.v6.2.symbols.gmt")
-
-# Look at them all if you want (uncomment)
-# pathways.hallmark
-
-# Show the first few pathways, and within those, show only the first few genes. 
-pathways.hallmark %>% 
-  head() %>% 
-  lapply(head)
-
-fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
-
-fgseaResTidy <- fgseaRes %>%
-  as_tibble() %>%
-  arrange(desc(NES))
-
-# Show in a nice table:
-fgseaResTidy %>% 
-  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
-  arrange(padj) %>% 
-  DT::datatable()
-
-
-ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05)) +
-  coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()
-
-################################# GOSEQ #######################################
-
-res_LRT_shr_F5.20
-
-assayed.genes <- rownames(res_LRT_shr_F5.20)
-
-de.genes <- rownames(res_LRT_shr_F5.20)[ which(res_LRT_shr_F5.20$padj < 0.1) ]
-
-table(assayed.genes)
 
 
