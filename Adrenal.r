@@ -82,6 +82,7 @@ sample.stage
 
 phenodata$sample.dev.origin <- paste(phenodata$Stage, phenodata$Sample, sep = "_")
 sample.dev.origin <- phenodata$sample.dev.origin
+
 rownames(phenodata) <- phenodata$sample.dev.origin
 View(phenodata)
 
@@ -90,7 +91,7 @@ number
 
 
 # Create a coldata frame and instantiate the DESeqDataSet. See ?DESeqDataSetFromMatrix
-coldata <- data.frame(row.names=colnames(countdata), batch, tissue, sex, stage, origin, number, sample.dev.origin)
+coldata <- data.frame(row.names=colnames(countdata), batch, tissue, sex, stage, origin, number, sample.dev.origin, sample.stage)
 coldata
 
 
@@ -109,13 +110,14 @@ normalized_counts <- counts(dds, normalized=TRUE)
 
 head(normalized_counts)
 
-write.table(normalized_counts, file="results/Adrenal-Controls/normalized_counts.txt", sep="\t", quote=F, col.names=NA)
+write.csv(normalized_counts, file="results/Adrenal-Controls/normalized_counts.csv", quote=F)
 
 # COUNT DATA QC : VST Transformation and PCA Plots #
 
 # vst is faster to compute and is less sensitive to high count outliers. Is recommended for large datasets.
 
 vsd <- vst(dds, blind=TRUE)
+
 head(assay(vsd),1)
 hist(assay(vsd))
 names(colData(dds))
@@ -152,6 +154,7 @@ ggplot(df) + geom_point(aes(x=PC1, y=PC3, color = Sex), size = 3)+ theme_classic
 ggplot(df) + geom_point(aes(x=PC2, y=PC3, color = Sex), size = 3)+ theme_classic()
 
 ggplot(df) + geom_point(aes(x=PC1, y=PC3, color = Origin), size = 3)+ theme_classic()
+
 plotPCA.PC2.PC3 <- ggplot(df) + geom_point(aes(x=PC2, y=PC3, color = Origin), size = 3)+ theme_classic()
 
 ggplot(df, aes(x=PC1, y=PC3, color = batch), size = 3) + geom_point(size=3) + xlab(paste0("PC1: ",percentVar[1],"% variance")) +
@@ -220,7 +223,7 @@ sizeFactors(dds.adrenal)
 normalized_counts.adrenal <- counts(dds.adrenal, normalized=TRUE)
 head(normalized_counts.adrenal)
 
-write.table(normalized_counts.adrenal, file="results/Adrenal/normalized_counts.adrenal.txt", sep="\t", quote=F, col.names=NA)
+write.csv(normalized_counts.adrenal, file="results/Adrenal/normalized_counts.adrenal.csv", quote=F)
 
 
 # COUNT DATA QC : VST Transformation and PCA Plots #
@@ -234,10 +237,9 @@ plotPCA.stage.adrenal <- plotPCA(vsd.adrenal, intgroup=c("stage.adrenal"), ntop 
 plotPCA.batch.adrenal <- plotPCA(vsd.adrenal, intgroup=c("batch.adrenal"), ntop = Inf)+ theme_classic()
 plotPCA.sex.adrenal <- plotPCA(vsd.adrenal, intgroup=c("sex.adrenal"), ntop = Inf)+ theme_classic()
 
-
 pcaData.tissue.adrenal <- plotPCA(vsd.adrenal, intgroup=c("batch.adrenal", "sex.adrenal", "sample.adrenal.dev.origin"), ntop = Inf, returnData=TRUE)
 percentVar.adrenal <- round(100 * attr(pcaData.tissue.adrenal, "percentVar"))
-plot.tissue.stage.adrenal <- ggplot(pcaData.tissue.adrenal, aes(PC1, PC2, color=stage.adrenal, shape=batch.adrenal)) +
+plot.batch.stage.adrenal <- ggplot(pcaData.tissue.adrenal, aes(PC1, PC2, color=stage.adrenal, shape=batch.adrenal)) +
   geom_point(size=3) + theme_classic() +
   xlab(paste0("PC1: ",percentVar.adrenal[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar.adrenal[2],"% variance")) + 
@@ -282,7 +284,17 @@ ggplot(df.adrenal) + geom_point(aes(x=PC1, y=PC3, color = as.factor(stages.adren
 ggplot(df.adrenal) + geom_point(aes(x=PC2, y=PC3, color = as.factor(stages.adrenal$Batch)), size = 3)+ theme_classic()
 
 ########### DENDROGRAM ###################
+vsd.all.distances <- dist(t(assay(vsd)))
+vsd.all.hc <- hclust(vsd.all.distances, method = "ward.D2")
+vsd.all.hc$order
 
+#dend
+plot(vsd.all.hc, hang = -1, cex = 1)
+#dend.stage
+dendrogram.all.stages <- plot(vsd.all.hc,labels=sample.stage, hang = -1, cex = 1)
+
+#dend.sample.dev.or
+dendrogram.all.label <- plot(vsd.all.hc,labels=sample.dev.origin, hang = -1, cex = 1)
 
 vsd.distances <- dist(t(assay(vsd.adrenal)))
 vsd.hc <- hclust(vsd.distances, method = "ward.D2")
@@ -304,13 +316,15 @@ sampleDists <- dist(t(assay(vsd)))
 sampleDists
 sampleDistMatrix <- as.matrix( sampleDists )
 
-rownames(sampleDistMatrix) <-phenodata$Sample_stage
-colnames(sampleDistMatrix) <- phenodata$Sample_stage
+rownames(sampleDistMatrix) <-phenodata$sample.dev.origin
+colnames(sampleDistMatrix) <- phenodata$sample.dev.origin
 
 colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
 heatmap.sampleDist.all<- pheatmap(sampleDistMatrix, fontsize = 6,
                                   clustering_distance_rows = sampleDists,
                                   clustering_distance_cols = sampleDists, col=colors)
+
+heatmap.sampleDist.all.noclust <- pheatmap(sampleDistMatrix, cluster_rows=F, cluster_cols=F,fontsize = 6, col=colors)
 
 
 ##### ADRENAL ###############
@@ -327,12 +341,7 @@ heatmap.tissue.stage.adrenal.labels <- pheatmap(sampleDistMatrix.adrenal, fontsi
                                          clustering_distance_rows = sampleDists.adrenal,
                                          clustering_distance_cols = sampleDists.adrenal, col=colors)
 
-rownames(sampleDistMatrix.adrenal) <-stages.adrenal$Stage
-colnames(sampleDistMatrix.adrenal) <- stages.adrenal$Stage
-
-heatmap.tissue.stage.adrenal <- pheatmap(sampleDistMatrix.adrenal, fontsize = 6,
-                                                clustering_distance_rows = sampleDists.adrenal,
-                                                clustering_distance_cols = sampleDists.adrenal, col=colors)
+heatmap.tissue.stage.adrenal.labels.noclust <- pheatmap(sampleDistMatrix.adrenal, cluster_rows=F, cluster_cols=F,fontsize = 6, col=colors)
 
 dev.off()
 
@@ -374,7 +383,7 @@ convert <- function(dataset) {
 res_shr.symbol <- convert(res_shr)
 write.csv(res_shr.symbol, file="results/Adrenal-Controls/results.Adrenal.vs.Control.shr.csv",row.names = FALSE)
 
-res_shr.symbol
+head(res_shr.symbol)
 
 ########## Heatmap #############
 
@@ -408,15 +417,17 @@ top_genes <- top_genes[!(top_genes$hgnc_symbol==""), ]
 rownames(top_genes) <- top_genes$hgnc_symbol
 top_genes <- top_genes %>% dplyr::select(-one_of("hgnc_symbol"))
 
-anno <- phenodata$sample.dev.origin
 
-heatmap.top40.counts.cluster <- pheatmap(top_genes[1:40,], cluster_rows = F, clustering_distance_cols ="euclidean",clustering_method = "complete", cluster_cols = T,scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
-
-
-heatmap.top500.counts.cluster <- pheatmap(top_genes[1:500,], cluster_rows = F, cluster_cols = T, scale = "row", clustering_distance_cols ="euclidean",clustering_method = "complete",fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = F)
+heatmap.top40.counts.cluster <- pheatmap(top_genes[1:40,], cluster_rows = F, clustering_distance_cols ="euclidean",clustering_method = "complete", cluster_cols = T,scale = "row", fontsize_row = 6, labels_col =phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = T)
+heatmap.top40.counts <- pheatmap(top_genes[1:40,], cluster_rows = F, cluster_cols=F, fontsize_row = 6, labels_col =phenodata$sample.dev.origin, fontsize_col = 6, scale="row",show_rownames = T)
 
 
-heatmap.top200.counts.cluster <- pheatmap(top_genes[1:200,], cluster_rows = F, cluster_cols = T, scale = "row", clustering_distance_cols ="euclidean",clustering_method = "complete",fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = F)
+heatmap.top500.counts.cluster <- pheatmap(top_genes[1:500,], cluster_rows = F, cluster_cols = T, scale = "row", clustering_distance_cols ="euclidean",clustering_method = "complete",fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
+heatmap.top500.counts <- pheatmap(top_genes[1:500,], cluster_rows = F, cluster_cols=F, fontsize_row = 6, labels_col =phenodata$sample.dev.origin, fontsize_col = 6, scale="row",show_rownames = F)
+
+
+heatmap.top200.counts.cluster <- pheatmap(top_genes[1:200,], cluster_rows = F, cluster_cols = T, scale = "row", clustering_distance_cols ="euclidean",clustering_method = "complete",fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
+heatmap.top200.counts <- pheatmap(top_genes[1:200,], cluster_rows = F, cluster_cols=F, fontsize_row = 6, labels_col =phenodata$sample.dev.origin, fontsize_col = 6, scale="row",show_rownames = F)
 
 
 vsd.df <- as.data.frame(assay(vsd))
@@ -434,11 +445,14 @@ top_genes.vsd <- top_genes.vsd[!(top_genes.vsd$hgnc_symbol==""), ]
 rownames(top_genes.vsd) <- top_genes.vsd$hgnc_symbol
 top_genes.vsd <- top_genes.vsd %>% dplyr::select(-one_of("hgnc_symbol"))
 
-heatmap.top40.vsd.cluster <- pheatmap(top_genes.vsd[1:40,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = T)
+heatmap.top40.vsd.cluster <- pheatmap(top_genes.vsd[1:40,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = T)
+heatmap.top40.vsd <- pheatmap(top_genes.vsd[1:40,], cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = T)
 
-heatmap.top500.vsd.cluster <- pheatmap(top_genes.vsd[1:500,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = F)
+heatmap.top500.vsd.cluster <- pheatmap(top_genes.vsd[1:500,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
+heatmap.top500.vsd <- pheatmap(top_genes.vsd[1:500,], cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
 
-heatmap.top200.vsd.cluster <- pheatmap(top_genes.vsd[1:200,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = anno, fontsize_col = 6, show_rownames = F)
+heatmap.top200.vsd.cluster <- pheatmap(top_genes.vsd[1:200,], cluster_rows = F, cluster_cols = T, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
+heatmap.top200.vsd <- pheatmap(top_genes.vsd[1:200,], cluster_rows = F, cluster_cols = F, scale = "row", fontsize_row = 6, labels_col = phenodata$sample.dev.origin, fontsize_col = 6, show_rownames = F)
 
 dev.off()
 
@@ -488,7 +502,7 @@ resultsNames(dds_lrt)
 normalized_counts.stage <- counts(dds_lrt, normalized=TRUE)
 head(normalized_counts.stage)
 
-write.table(normalized_counts.stage, file="results/Adrenal/TimeCourse/normalized_counts.stage.txt", sep="\t", quote=F, col.names=NA)
+write.csv(normalized_counts.stage, file="results/Adrenal/TimeCourse/normalized_counts.stage.csv", quote=F)
 
 ###### CS23 vs CS20.21 #######
 
@@ -864,7 +878,7 @@ nrow(patterns_F5.20.genes.XY) #5331
 
 patterns_F5.20.genes.XY <- left_join(patterns_F5.20.genes.XY, res.late.early.XY.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-write.csv(patterns_F5.20.genes.XY, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XY.vs.CS20.21.XY.LFC.0.7.shr.csv")
+write.csv(patterns_F5.20.genes.XY, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XY.vs.CS20.21.XY.LFC.0.7.shr.csv", row.names = F)
 
 
 ############ F4.5 XX vs CS20.21 XX ###########
@@ -895,54 +909,7 @@ nrow(patterns_F5.20.genes.XX) #3229
 
 patterns_F5.20.genes.XX <- left_join(patterns_F5.20.genes.XX, res.late.early.XX.symbol, by = c('ensembl','hgnc_symbol')) %>% dplyr::select(-genes)
 
-write.csv(patterns_F5.20.genes.XX, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XX.vs.CS20.21.XX.LFC.0.7.shr.csv")
-
-
-################ TPM PLOTS #################
-
-######### ADRENAL & CONTROLS ############
-
-head(normalized_counts)
-
-gene.length <- read.table("data/genelength.csv", row.names=1, sep=",",header=T)
-head(gene.length)
-
-tpm <- function(counts, lengths) {
-  rate <- counts / lengths
-  rate / sum(rate) * 1e6
-}
-
-dim(normalized_counts)
-rownames(normalized_counts)
-rownames(gene.length)
-dim(gene.length)
-
-gene.length.all <- subset(gene.length, (rownames(gene.length) %in% rownames(as.data.frame(normalized_counts))))
-
-tpms.all <- apply(normalized_counts, 2, function(x) tpm(x, gene.length.all$Length))
-
-colSums(tpms.all)
-colMeans(tpms.all)
-
-write.table(tpms.all, file="results/TPM.All.csv", sep=",")
-
-head(tpms.all)
-
-
-######## ADRENAL ############
-
-head(normalized_counts.adrenal)
-
-gene.length <- subset(gene.length, (rownames(gene.length) %in% rownames(normalized_counts.adrenal)))
-
-tpms <- apply(normalized_counts.adrenal, 2, function(x) tpm(x, gene.length$Length))
-
-colSums(tpms)
-colMeans(tpms)
-
-write.table(tpms, file="results/TPM.Adrenal.csv", sep=",")
-
-colnames(tpms) == rownames(stages.adrenal)
+write.csv(patterns_F5.20.genes.XX, file="results/Adrenal/TimeCourse/SexDifferences/TimeCourse/patterns.Adrenal.F4.5.XX.vs.CS20.21.XX.LFC.0.7.shr.csv", row.names = F)
 
 
 ########## Heatmap ADRENAL STEROIDOGENESIS #############
@@ -954,11 +921,11 @@ counts_heatmap <- as.data.frame(normalized_counts.adrenal)
 head(counts_heatmap)
 
 counts_heatmap <- convert(counts_heatmap)
-nrow(counts_heatmap)
+nrow(counts_heatmap) #34722
 
-counts_heatmap <- counts_heatmap[!(counts_heatmap$hgnc_symbol==""), ]
+counts_heatmap <- counts_heatmap[!(counts_heatmap$hgnc_symbol==""), ] #25381
 
-counts_heatmap <- counts_heatmap[!duplicated(counts_heatmap$hgnc_symbol),]
+counts_heatmap <- counts_heatmap[!duplicated(counts_heatmap$hgnc_symbol),] #25376
 
 rownames(counts_heatmap) <- counts_heatmap$hgnc_symbol
 
@@ -972,38 +939,76 @@ hmap <- counts_heatmap[steroido,]
 hmap.tf <- counts_heatmap[tfs,]
 hmap
 
-heatmap.steroido.counts.cluster <- pheatmap(hmap, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.adrenal.dev.origin)
+heatmap.adrenal.steroido.counts.cluster <- pheatmap(hmap, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.adrenal.dev.origin)
+heatmap.adrenal.steroido.counts <- pheatmap(hmap, cluster_rows = F, cluster_cols = F, scale = "row", labels_col = sample.adrenal.dev.origin)
 
-hmap.tf.counts.cluster <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = T, scale = "row",labels_col = sample.adrenal.dev.origin)
+hmap.adrenal.tf.counts.cluster <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = T, scale = "row",labels_col = sample.adrenal.dev.origin)
+hmap.adrenal.tf.counts <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = F, scale = "row",labels_col = sample.adrenal.dev.origin)
 
 dev.off()
 
-head(vsd.df)
+vsd.all <- as.data.frame(vsd_mat)
+head(normalized_counts)
+head(vsd.all)
 
-counts_heatmap.vsd <- vsd.df
-head(counts_heatmap.vsd)
+counts_heatmap.all <- as.data.frame(normalized_counts)
+head(counts_heatmap.all)
 
-counts_heatmap.vsd <- convert(counts_heatmap.vsd)
-nrow(counts_heatmap.vsd)
+counts_heatmap.all <- convert(counts_heatmap.all)
+nrow(counts_heatmap.all) #38366
 
-counts_heatmap.vsd <- counts_heatmap.vsd[!(counts_heatmap.vsd$hgnc_symbol==""), ]
+counts_heatmap.all <- counts_heatmap.all[!(counts_heatmap.all$hgnc_symbol==""), ] #27280
 
-counts_heatmap.vsd <- counts_heatmap.vsd[!duplicated(counts_heatmap.vsd$hgnc_symbol),]
+counts_heatmap.all <- counts_heatmap.all[!duplicated(counts_heatmap.all$hgnc_symbol),] #27275
 
-rownames(counts_heatmap.vsd) <- counts_heatmap.vsd$hgnc_symbol
+rownames(counts_heatmap.all) <- counts_heatmap.all$hgnc_symbol
 
-counts_heatmap.vsd <- counts_heatmap.vsd %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
-dim(counts_heatmap.vsd)
+counts_heatmap.all <- counts_heatmap.all %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
+dim(counts_heatmap.all)
+
+hmap.all <- counts_heatmap.all[steroido,]
+hmap.tf.all <- counts_heatmap.all[tfs,]
 
 
-steroido <- c("MC2R", "MRAP", "STAR", "CYP11A1", "HSD3B2", "CYP17A1", "POR", "CYB5A", "SULT2A1", "CYP21A2", "CYP11B1", "CYP11B2")
-hmap.vsd <- counts_heatmap.vsd[steroido,]
-hmap.vsd.tf <- counts_heatmap.vsd[tfs,]
+heatmap.all.steroido.counts.cluster <- pheatmap(hmap.all, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.dev.origin)
+heatmap.all.steroido.counts <- pheatmap(hmap, cluster_rows = F, cluster_cols = F, scale = "row", labels_col = sample.dev.origin)
 
-hmap.vsd
+hmap.all.tf.counts.cluster <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = T, scale = "row",labels_col = sample.dev.origin)
+hmap.all.tf.counts <- pheatmap(hmap.tf, cluster_rows = F, cluster_cols = F, scale = "row",labels_col = sample.dev.origin)
 
-heatmap.steroido.vsd.cluster <- pheatmap(hmap.vsd, cluster_rows = F, cluster_cols = T, scale='row', labels_col = sample.adrenal.dev.origin)
-heatmap.vsd.tf.cluster <- pheatmap(hmap.vsd.tf, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.adrenal.dev.origin)
+dev.off()
+
+
+head(vsd.all)
+
+counts_heatmap.all.vsd <- vsd.all
+head(counts_heatmap.all.vsd)
+
+counts_heatmap.vsd.all <- convert(counts_heatmap.all.vsd)
+nrow(counts_heatmap.vsd.all) #38366
+
+counts_heatmap.vsd.all <- counts_heatmap.vsd.all[!(counts_heatmap.vsd.all$hgnc_symbol==""), ] #27280
+
+counts_heatmap.vsd.all <- counts_heatmap.vsd.all[!duplicated(counts_heatmap.vsd.all$hgnc_symbol),] #27275
+
+rownames(counts_heatmap.vsd.all) <- counts_heatmap.vsd.all$hgnc_symbol
+
+counts_heatmap.vsd.all <- counts_heatmap.vsd.all %>% dplyr::select(-one_of("ensembl","hgnc_symbol"))
+dim(counts_heatmap.vsd.all)
+
+
+hmap.vsd.all <- counts_heatmap.vsd.all[steroido,]
+hmap.vsd.all.tf <- counts_heatmap.vsd.all[tfs,]
+
+head(hmap.vsd.all)
+head(hmap.vsd.all.tf)
+
+heatmap.all.steroido.vsd.cluster <- pheatmap(hmap.vsd.all, cluster_rows = F, cluster_cols = T, scale='row', labels_col = sample.dev.origin)
+heatmap.all.steroido.vsd <- pheatmap(hmap.vsd.all, cluster_rows = F, cluster_cols = F, scale='row', labels_col = sample.dev.origin)
+
+
+heatmap.vsd.tf.all.cluster <- pheatmap(hmap.vsd.all.tf, cluster_rows = F, cluster_cols = T, scale = "row", labels_col = sample.dev.origin)
+heatmap.vsd.all.tf <- pheatmap(hmap.vsd.all.tf, cluster_rows = F, cluster_cols = F, scale = "row", labels_col = sample.dev.origin)
 
 dev.off()
 
@@ -1062,14 +1067,6 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
-
-
-save.image(file = "Adrenal.RData")
-
-#############################################################################
-#############################################################################
-
-
 
 
 
@@ -1136,6 +1133,60 @@ counts_plot.adrenal("CD99L2")
 counts_plot.adrenal("ACE2")
 
 
+
+
+save.image(file = "Adrenal.RData")
+
+#############################################################################
+#############################################################################
+################ TPM PLOTS #################
+
+######### ADRENAL & CONTROLS ############
+
+head(normalized_counts)
+
+gene.length <- read.table("data/genelength.csv", row.names=1, sep=",",header=T)
+head(gene.length)
+
+tpm <- function(counts, lengths) {
+  rate <- counts / lengths
+  rate / sum(rate) * 1e6
+}
+
+dim(normalized_counts)
+rownames(normalized_counts)
+rownames(gene.length)
+dim(gene.length)
+
+gene.length.all <- subset(gene.length, (rownames(gene.length) %in% rownames(as.data.frame(normalized_counts))))
+
+tpms.all <- apply(normalized_counts, 2, function(x) tpm(x, gene.length.all$Length))
+
+colSums(tpms.all)
+colMeans(tpms.all)
+
+write.table(tpms.all, file="results/TPM.All.csv", sep=",")
+
+head(tpms.all)
+
+
+######## ADRENAL ############
+
+head(normalized_counts.adrenal)
+
+gene.length <- subset(gene.length, (rownames(gene.length) %in% rownames(normalized_counts.adrenal)))
+
+tpms <- apply(normalized_counts.adrenal, 2, function(x) tpm(x, gene.length$Length))
+
+colSums(tpms)
+colMeans(tpms)
+
+write.table(tpms, file="results/TPM.Adrenal.csv", sep=",")
+
+colnames(tpms) == rownames(stages.adrenal)
+
+dev.off()
+
 tpms_plot <- function(g){
   geneName <- mapIds(Homo.sapiens,keys=g,column="ENSEMBL",keytype="SYMBOL")
   gene <- as.data.frame(tpms[geneName,])
@@ -1150,12 +1201,6 @@ tpms_plot <- function(g){
 }
 
 tpms_plot("CD99L2")
-
-
-
-dev.off()
-
-
 
 
 
